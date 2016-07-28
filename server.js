@@ -1,5 +1,6 @@
 var express = require("express");
 var bodyParser = require("body-parser");
+var _ = require("underscore");
 var app = express();
 var PORT = process.env.PORT || 3000;
 var CONST = 300;
@@ -28,7 +29,7 @@ app.get("/todos", function(req, res) {
 	res.json(todos);
 });
 
-app.get("/todos/:id", function(req, res) {
+/*app.get("/todos/:id", function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
 	console.log(todoId);
 	var result;
@@ -46,18 +47,41 @@ app.get("/todos/:id", function(req, res) {
 		console.log(result);
 		res.status(404).send();
 	}
+});*/
+app.get("/todos/:id", function(req, res) {
+	var todoId = parseInt(req.params.id, 10);
+	var result = _.findWhere(todos, {id : todoId});
+
+	if(result) {
+		res.json(result);
+	} else {
+		console.log(result);
+		res.status(404).send();
+	}
 });
+
 
 app.post("/todos", function(req, res) {
 	var body = req.body;
 	console.log("description - " + body.description);
-	var construct = {
+	console.log('Before cleaning ' + JSON.stringify(body));
+	var cleanBody = _.pick(body, 'description', 'completed');
+	console.log('After cleaning '+JSON.stringify(cleanBody));
+
+	if(!_.isString(body.description) || !_.isBoolean(body.completed)) {
+		console.log("User input not correct");
+		res.status(404).send();
+	} else {
+		var construct = {
 		id: CONST + 54,
-		description: body.description,
+		description: body.description.trim(),
 		completed: body.completed
 	};
 	todos.push(construct);
-	res.json(todos);
+		res.json(todos);
+	}
+	
+	
 });
 
 app.listen(PORT, function() {
