@@ -36,9 +36,15 @@ app.get("/todos", function(req, res) {
 	} // false items
 	else if(queryParams.hasOwnProperty("completed") && completedParam && completedParam.trim() === 'false') {
 		result = _.where(todos, {completed : false});
-		console.log('here here herere');
 		console.log(JSON.stringify(todos));
 	} // all items
+	if(queryParams.hasOwnProperty("q")) {
+		console.log('hereeeeee	');
+		var descriptionParam = queryParams.q;
+		result = _.filter(result, function(todo) {
+			return todo.description.indexOf(descriptionParam) > -1;
+		});
+	}
 	res.json(result);	
 });
 
