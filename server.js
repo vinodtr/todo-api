@@ -114,16 +114,23 @@ app.get("/todos/:id", function(req, res) {
 
 app.delete("/todos/:id", function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
-	var matchedTodo = _.findWhere(todos, {
-		id: todoId
+	db.todo.destroy({
+		where: {
+			id: todoId
+		}
+	}).then(function(deleted) {
+		if (deleted == 0) {
+			res.status(404).send({
+				error: "No matching element found"
+			})
+		} else {
+			res.status(204).send();
+		}
+	}, function(error) {
+		res.status(500).send();
 	});
-	if (!matchedTodo) {
-		res.send('No matching element found to be deleted');
-	} else {
-		todos = _.without(todos, matchedTodo);
-		res.send('Element successfully removed');
-	}
 });
+
 
 app.put("/todos/:id", function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
