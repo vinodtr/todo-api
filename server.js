@@ -30,7 +30,28 @@ app.get("/todos", function(req, res) {
 	var queryParams = req.query;
 	var completedParam = queryParams.completed;
 	var result = todos;
-	console.log(completedParam);
+	var where = {};
+	if (queryParams.hasOwnProperty("completed") && completedParam && completedParam.trim() === 'true') {
+		where.completed = true;
+	} // false items
+	else if (queryParams.hasOwnProperty("completed") && completedParam && completedParam.trim() === 'false') {
+		where.completed = false;
+	}
+
+	if (queryParams.hasOwnProperty("q") && queryParams.q.length > 0) {
+		where.description = {
+			$like: '%' + queryParams.q + '%'
+		};
+	}
+
+	db.todo.findAll({
+		where: where
+	}).then(function(todos) {
+		res.json(todos);
+	}, function(error) {
+		res.status(500).send();
+	});
+	/*console.log(completedParam);
 	// true items
 	if (queryParams.hasOwnProperty("completed") && completedParam && completedParam.trim() === 'true') {
 		result = _.where(todos, {
@@ -50,7 +71,8 @@ app.get("/todos", function(req, res) {
 			return todo.description.indexOf(descriptionParam) > -1;
 		});
 	}
-	res.json(result);
+
+	res.json(result);*/
 });
 
 /*app.get("/todos/:id", function(req, res) {
