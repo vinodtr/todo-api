@@ -145,16 +145,18 @@ app.put("/todos/:id", function(req, res) {
 		return res.status(404).send();
 	}*/
 
-	if (body.hasOwnProperty("completed")) {// && _.isBoolean(body.completed)) {
+	if (body.hasOwnProperty("completed")) { // && _.isBoolean(body.completed)) {
 		validAttributes.completed = body.completed;
-	} /*else if (body.hasOwnProperty("completed")) {
+	}
+	/*else if (body.hasOwnProperty("completed")) {
 		console.log("2");
 		return res.status(400).send();
 	}*/
 
-	if (body.hasOwnProperty("description")) {//&& _.isString("description") && body.description.trim().length > 0) {
+	if (body.hasOwnProperty("description")) { //&& _.isString("description") && body.description.trim().length > 0) {
 		validAttributes.description = body.description;
-	} /*else if (body.hasOwnProperty("description")) {
+	}
+	/*else if (body.hasOwnProperty("description")) {
 		console.log("3");
 		return res.status(400).send();
 	}*/
@@ -162,21 +164,18 @@ app.put("/todos/:id", function(req, res) {
 	// _.extend(matchedTodo, validAttributes);
 	// res.json(matchedTodo);
 	db.todo.findById(todoId).then(function(todo) {
-		console.log('1');
 		// if matching element is present
-		if(todo) {
-			console.log('2');
-			return todo.update(validAttributes);
+		if (todo) {
+			todo.update(validAttributes).then(function(todo) {
+				res.json(todo.toJSON());
+			}, function(error) {
+				res.status(400).json(error);
+			});;
 		} else {
-			console.log('3');
 			res.status(404).send();
 		}
 	}, function(error) {
 		res.status(500).send();
-	}).then(function(todo) {
-		res.json(todo.toJSON());
-	}, function(error) {
-		res.status(400).json(error);
 	});
 });
 
