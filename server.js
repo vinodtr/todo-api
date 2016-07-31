@@ -1,5 +1,6 @@
 var express = require("express");
 var bodyParser = require("body-parser");
+var bcrypt = require("bcryptjs");
 var _ = require("underscore");
 var db = require("./db.js");
 var app = express();
@@ -217,6 +218,31 @@ app.post("/users", function(req, res) {
 	}, function(error) {
 		res.status(400).json(error);
 	});
+});
+
+app.post("/users/login", function(req, res) {
+	var body = _.pick(req.body, 'email', 'password');
+
+	if (typeof body.email !== 'string' || typeof body.password !== 'string') {
+		return res.status(400).send();
+	}
+	db.users.findOne({
+		where: {
+			email: body.email
+		}
+	}).then(function(user) {
+		console.log(bcrypt.compareSync(body.password, user.get('password_hash')));
+		if (!user || !bcrypt.compareSync(body.password, user.get('password_hash'))) {
+			return res.status(401).send();
+		} else {
+			res.send(user.toPublicJSON());
+		}
+	}, function(error) {
+		res.status(500).send();
+	});
+
+
+
 });
 
 db.sequelize.sync().then(function() {
