@@ -223,7 +223,7 @@ app.post("/users", function(req, res) {
 app.post("/users/login", function(req, res) {
 	var body = _.pick(req.body, 'email', 'password');
 	db.users.authenticate(body).then(function(user) {
-		res.send(user.toPublicJSON());
+		res.header('Auth', user.generateToken('authentication')).json(user.toPublicJSON());
 	}, function(error) {
 		res.status(401).send();
 	});
