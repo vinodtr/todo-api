@@ -222,8 +222,13 @@ app.post("/users", function(req, res) {
 
 app.post("/users/login", function(req, res) {
 	var body = _.pick(req.body, 'email', 'password');
+	db.users.authenticate(body).then(function(user) {
+		res.send(user.toPublicJSON());
+	}, function(error) {
+		res.status(401).send();
+	});
 
-	if (typeof body.email !== 'string' || typeof body.password !== 'string') {
+	/*if (typeof body.email !== 'string' || typeof body.password !== 'string') {
 		return res.status(400).send();
 	}
 	db.users.findOne({
@@ -235,11 +240,11 @@ app.post("/users/login", function(req, res) {
 		if (!user || !bcrypt.compareSync(body.password, user.get('password_hash'))) {
 			return res.status(401).send();
 		} else {
-			res.send(user.toPublicJSON());
+			res.json(user.toPublicJSON());
 		}
 	}, function(error) {
 		res.status(500).send();
-	});
+	});*/
 
 
 
