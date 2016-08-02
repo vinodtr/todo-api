@@ -3,6 +3,8 @@ var bodyParser = require("body-parser");
 var bcrypt = require("bcryptjs");
 var _ = require("underscore");
 var db = require("./db.js");
+var middleware = require('./middleware.js')(db);
+//var func = middleware.middleware(db);
 var app = express();
 var PORT = process.env.PORT || 3000;
 var CONST = 300;
@@ -27,11 +29,13 @@ app.get("/", function(request, response) {
 	response.send("Welcome to Express Website !");
 });
 
-app.get("/todos", function(req, res) {
+app.get("/todos", middleware.requireAuthentication, function(req, res) {
 	var queryParams = req.query;
 	var completedParam = queryParams.completed;
 	var result = todos;
-	var where = {};
+	var where = {
+		userId: req.user.get('id')
+	};
 	if (queryParams.hasOwnProperty("completed") && completedParam && completedParam.trim() === 'true') {
 		where.completed = true;
 	} // false items
@@ -94,9 +98,14 @@ app.get("/todos", function(req, res) {
 		res.status(404).send();
 	}
 });*/
-app.get("/todos/:id", function(req, res) {
+app.get("/todos/:id", middleware.requireAuthentication, function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
-	db.todo.findById(todoId).then(function(todo) {
+	db.todo.findOne({
+		where: {
+			id: todoId,
+			userId: req.user.get('id')
+		}
+	}).then(function(todo) {
 		if (todo) {
 			res.json(todo.toJSON());
 		} else {
@@ -113,11 +122,12 @@ app.get("/todos/:id", function(req, res) {
 //
 
 
-app.delete("/todos/:id", function(req, res) {
+app.delete("/todos/:id", middleware.requireAuthentication, function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
 	db.todo.destroy({
 		where: {
-			id: todoId
+			id: todoId,
+			userId: req.user.get('id')
 		}
 	}).then(function(deleted) {
 		if (deleted == 0) {
@@ -133,7 +143,7 @@ app.delete("/todos/:id", function(req, res) {
 });
 
 
-app.put("/todos/:id", function(req, res) {
+app.put("/todos/:id", middleware.requireAuthentication, function(req, res) {
 	var todoId = parseInt(req.params.id, 10);
 	var body = _.pick(req.body, 'description', 'completed');
 	/*var matchedTodo = _.findWhere(todos, {
@@ -164,14 +174,19 @@ app.put("/todos/:id", function(req, res) {
 
 	// _.extend(matchedTodo, validAttributes);
 	// res.json(matchedTodo);
-	db.todo.findById(todoId).then(function(todo) {
+	db.todo.findOne({
+		where: {
+			id: todoId,
+			userId: req.user.get('id')
+		}
+	}).then(function(todo) {
 		// if matching element is present
 		if (todo) {
 			todo.update(validAttributes).then(function(todo) {
 				res.json(todo.toJSON());
 			}, function(error) {
 				res.status(400).json(error);
-			});;
+			});
 		} else {
 			res.status(404).send();
 		}
@@ -180,11 +195,17 @@ app.put("/todos/:id", function(req, res) {
 	});
 });
 
-app.post("/todos", function(req, res) {
+app.post("/todos", middleware.requireAuthentication, function(req, res) {
 	var body = _.pick(req.body, 'description', 'completed');
 	db.todo.create(body).then(function(todo) {
-		console.log("Entry inserted in the database");
-		res.json(todo.toJSON());
+		req.user.addTodo(todo).then(function() {
+			return todo.reload();
+		}).then(function(todo) {
+			res.json(todo.toJSON());
+		});
+
+		//console.log("Entry inserted in the database");
+		//res.json(todo.toJSON());
 	}).catch(function(error) {
 		console.log("Error has occurred");
 		res.status(404).json(error);
@@ -224,12 +245,12 @@ app.post("/users/login", function(req, res) {
 	var body = _.pick(req.body, 'email', 'password');
 	db.users.authenticate(body).then(function(user) {
 		var token = user.generateToken('authentication');
-		if(token) {
-			res.header('Auth', token).json(user.toPublicJSON());	
+		if (token) {
+			res.header('Auth', token).json(user.toPublicJSON());
 		} else {
-			res.status(401).send();	
+			res.status(401).send();
 		}
-		
+
 	}, function(error) {
 		res.status(401).send();
 	});
@@ -256,7 +277,9 @@ app.post("/users/login", function(req, res) {
 
 });
 
-db.sequelize.sync().then(function() {
+db.sequelize.sync({
+	force: false
+}).then(function() {
 	app.listen(PORT, function() {
 		console.log("Express listening on " + PORT)
 	});

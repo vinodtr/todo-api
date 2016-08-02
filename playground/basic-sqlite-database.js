@@ -17,12 +17,20 @@ var Todo = sequelize.define("todo", {
 		defaultValue: false
 	}
 });
+
+var User = sequelize.define("user", {
+	email: Sequelize.STRING
+});
+
+Todo.belongsTo(User);
+User.hasMany(Todo);
+
 sequelize.sync({
-	force: true
+	force: false
 }).then(function() {
 	console.log("Everything is in Sync");
 
-	Todo.create({
+	/*Todo.create({
 		description: "Walk the Tigers",
 		completed: true
 	}).then(function(todo) {
@@ -46,8 +54,45 @@ sequelize.sync({
 			console.log("No matching record found");
 		}
 
-	});
+	});*/
+	User.findAll({
+		where: {
+			this.completed: true
+		}
+	}).then(function(user) {
+		if (user) {
+			var todos = user.getTodos();
+			todos.forEach(function(todo) {
+				console.log(todo);
+			})
+		} else {
+			User.findAll({
+				where: {
+					todo.completed: false
+				}
+			}).then(function(user) {
+				if (user) {
+					var todos = user.getTodos();
+					todos.forEach(function(todo) {
+						console.log(todo);
+					})
+				}
+			})
+		}
+	})
 
+	/*User.create({
+		email: "andrew@gmail.com"
+	}).then(function() {
+		return Todo.create({
+			description: "Throw the trash",
+			completed: false
+		}).then(function(todo) {
+			User.findById(1).then(function(user) {
+				user.addTodo(todo);
+			})
+		})
+	});*/
 
 }).catch(function(error) {
 	console.log(error);
