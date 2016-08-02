@@ -16,6 +16,7 @@ if (env === 'production') {
 var db = {};
 db.todo = sequelize.import(__dirname + '/models/todo.js');
 db.users = sequelize.import(__dirname + '/models/users.js');
+db.token = sequelize.import(__dirname + '/models/token.js');
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 db.users.hasMany(db.todo);

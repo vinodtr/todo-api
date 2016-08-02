@@ -99,7 +99,7 @@ app.get("/todos", middleware.requireAuthentication, function(req, res) {
 	}
 });*/
 app.get("/todos/:id", middleware.requireAuthentication, function(req, res) {
-	var todoId = parseInt(req.params.id, 10);
+	try{var todoId = parseInt(req.params.id, 10);
 	db.todo.findOne({
 		where: {
 			id: todoId,
@@ -116,7 +116,7 @@ app.get("/todos/:id", middleware.requireAuthentication, function(req, res) {
 	});
 	/*var result = _.findWhere(todos, {
 		id: todoId
-	});*/
+	});*/}catch(e){console.error(e);}
 });
 
 //
@@ -243,15 +243,17 @@ app.post("/users", function(req, res) {
 
 app.post("/users/login", function(req, res) {
 	var body = _.pick(req.body, 'email', 'password');
+	var userInstance;
 	db.users.authenticate(body).then(function(user) {
 		var token = user.generateToken('authentication');
-		if (token) {
-			res.header('Auth', token).json(user.toPublicJSON());
-		} else {
-			res.status(401).send();
-		}
-
-	}, function(error) {
+		userInstance = user;
+		return db.token.create({
+			token: token
+		});
+	}).then(function(tokenInstance) {
+		res.header('Auth', tokenInstance.get('token')).json(userInstance.toPublicJSON());
+	}).catch(function(error) {
+		console.log(error);
 		res.status(401).send();
 	});
 
@@ -273,6 +275,17 @@ app.post("/users/login", function(req, res) {
 		res.status(500).send();
 	});*/
 
+
+
+});
+
+//LOGOUT
+app.delete("/users/login", middleware.requireAuthentication, function(req, res) {
+	req.token.destroy().then(function() {
+		res.status(204).send();
+	}, function(e) {
+		res.status(401).send();
+	});
 
 
 });
